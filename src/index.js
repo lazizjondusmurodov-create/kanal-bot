@@ -1141,16 +1141,12 @@ app.get('/', (req, res) => {
   res.json({ status: 'Bot ishlanmoqda ✅' });
 });
 
-app.post(`/bot${config.botToken}`, (req, res) => {
-  bot.handleUpdate(req.body, res);
-});
-
 // --- Ishga tushirish ---
 bot.catch((xato, ctx) => {
   console.error(`Botda xato (${ctx.updateType}):`, xato);
 });
 
-bot.launch({ webhook: { domain: `https://kanal-bot-dak8.onrender.com`, port: PORT } }).then(() => {
+bot.launch().then(() => {
   app.listen(PORT, () => {
     console.log('Bot ishga tushdi.');
     console.log(`Server running on port ${PORT}`);
