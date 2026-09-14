@@ -1,4 +1,5 @@
 import { Telegraf } from 'telegraf';
+import express from 'express';
 import cron from 'node-cron';
 import { config } from './config.js';
 import { javoblar, javobTop } from './javoblar.js';
@@ -14,6 +15,8 @@ import { ai } from './ai.js';
 import { pricing, getNarxText } from './pricing.js';
 
 const bot = new Telegraf(config.botToken);
+const app = express();
+const PORT = process.env.PORT || 3000;
 const adminmi = (ctx) => config.adminIds.includes(ctx.from?.id);
 const userSessions = new Map();
 
@@ -1132,18 +1135,30 @@ if (config.channelId) {
   });
 }
 
+// --- Express server (port binding uchun) ---
+app.use(express.json());
+app.get('/', (req, res) => {
+  res.json({ status: 'Bot ishlanmoqda ✅' });
+});
+
+app.post(`/bot${config.botToken}`, (req, res) => {
+  bot.handleUpdate(req.body, res);
+});
+
 // --- Ishga tushirish ---
 bot.catch((xato, ctx) => {
   console.error(`Botda xato (${ctx.updateType}):`, xato);
 });
 
-bot.launch(() => {
-  console.log('Bot ishga tushdi.');
-  if (config.channelId) {
-    console.log(`Kanal: ${config.channelId}`);
-    console.log(`Jadval: ${config.scheduleCron} (${config.timezone})`);
-  }
-  // Dashboard o'chiq (web dashboard kerak emas)
+bot.launch({ webhook: { domain: `https://kanal-bot-dak8.onrender.com`, port: PORT } }).then(() => {
+  app.listen(PORT, () => {
+    console.log('Bot ishga tushdi.');
+    console.log(`Server running on port ${PORT}`);
+    if (config.channelId) {
+      console.log(`Kanal: ${config.channelId}`);
+      console.log(`Jadval: ${config.scheduleCron} (${config.timezone})`);
+    }
+  });
 }).catch((xato) => {
   if (xato.response?.error_code === 401) {
     console.error("XATO: BOT_TOKEN noto'g'ri.");

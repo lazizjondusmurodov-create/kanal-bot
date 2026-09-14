@@ -12,7 +12,7 @@ if (config.geminiApiKey) {
   }
 }
 
-async function generateWithRetry(prompt, maxRetries = 2) {
+async function generateWithRetry(prompt, maxRetries = 3) {
   if (!model) return null;
 
   for (let i = 0; i < maxRetries; i++) {
@@ -20,15 +20,15 @@ async function generateWithRetry(prompt, maxRetries = 2) {
       const result = await Promise.race([
         model.generateContent(prompt),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), 10000)
+          setTimeout(() => reject(new Error('Timeout')), 30000)
         )
       ]);
 
       const text = result.response?.text?.();
-      if (text && text.length > 10) return text;
+      if (text && text.length > 20) return text;
     } catch (error) {
       console.error(`AI urinish ${i + 1}/${maxRetries} xatosi:`, error.message);
-      if (i < maxRetries - 1) await new Promise(r => setTimeout(r, 1000));
+      if (i < maxRetries - 1) await new Promise(r => setTimeout(r, 2000));
     }
   }
   return null;
@@ -91,8 +91,19 @@ export const ai = {
   },
 
   async referatYaratish(mavzu) {
-    const prompt = `"${mavzu}" referat ichki mundarija (3-4 bo'lim) va tavsif.`;
+    const prompt = `Siz Uzbek tilida referat yozuvchisiz. "${mavzu}" mavzusida to'liq, batafsil referat tayyorlab bering.
+
+TUZILISH:
+1. KIRISH (2-3 paragraf) - Mavzu haqida umumiy ma'lumot va ahamiyati
+2. ASOSIY QO'LLANILGAN MAVZULAR (4-5 paragraf) - Batafsil tahlil va ma'lumotlar
+3. XULOSA (2-3 paragraf) - Umumiy xulosa va ahamiyati
+
+Talabalar:
+- O'zbek tilida
+- Sodda, tushunarli uslub
+- Minimal 2000 so'z
+- Har bir paragraf 3-4 gapdan iborat bo'lsin`;
     const text = await generateWithRetry(prompt);
-    return text || `${mavzu} Referat: Kirish, Asosiy qismlar, Xulosa`;
+    return text || `${mavzu} referat: Kirish, Asosiy qismlar, Xulosa - To'liq referat yaratilmoqda...`;
   },
 };
